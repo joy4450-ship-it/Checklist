@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endoscope Checklist - โรงพยาบาลมุกดาหาร</title>
+  
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- For Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --primary-green: #81c784;
+      --primary-dark: #519657;
+      --primary-light: #b2fab4;
+      --secondary-blue: #64b5f6;
+      --secondary-light: #9be7ff;
+      --bg-color: #f4f9f4;
+      --text-main: #2c3e50;
+    }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding-bottom: 80px; /* Space for mobile nav */
+    }
+
+    /* Navbar styling */
+    .navbar {
+      background: linear-gradient(135deg, var(--primary-green), var(--secondary-blue));
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .navbar-brand {
+      color: white !important;
+      font-weight: 700;
+    }
+    .nav-link {
+      color: rgba(255,255,255,0.9) !important;
+      font-weight: 500;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: white !important;
+      text-shadow: 0 0 10px rgba(255,255,255,0.8);
+      transform: translateY(-2px);
+    }
+
+    /* Card UI */
+    .card {
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      background-color: white;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-header {
+      background-color: white;
+      border-bottom: 2px solid var(--bg-color);
+      padding: 15px 20px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--primary-dark);
+    }
+
+    /* Form Elements */
+    .form-control, .form-select {
+      border-radius: 10px;
+      border: 1px solid #dee2e6;
+      padding: 10px 15px;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-green);
+      box-shadow: 0 0 0 0.25rem rgba(129, 199, 132, 0.25);
+    }
+    
+    /* Custom Checkbox / Radio */
+    .checklist-group {
+      margin-bottom: 1.5rem;
+    }
+    .checklist-item {
+      padding: 12px 15px;
+      border-radius: 10px;
+      background-color: #f8fcf8;
+      margin-bottom: 8px;
+      border: 1px solid #e8f5e9;
+      display: flex;
+      align-items: flex-start;
+      transition: 0.2s;
+    }
+    .checklist-item:hover {
+      background-color: #e8f5e9;
+    }
+    .form-check-input {
+      width: 1.3em;
+      height: 1.3em;
+      margin-top: 0.15em;
+      border-color: #a5d6a7;
+    }
+    .form-check-input:checked {
+      background-color: var(--primary-green);
+      border-color: var(--primary-green);
+    }
+    .form-check-input.radio-fail:checked {
+      background-color: #ef5350 !important;
+      border-color: #ef5350 !important;
+    }
+    .form-check-label {
+      margin-left: 10px;
+      font-weight: 500;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background-color: var(--primary-green);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-weight: 600;
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+    }
+    .btn-info {
+      background-color: var(--secondary-blue);
+      border: none;
+      color: white;
+      border-radius: 10px;
+    }
+    .btn-info:hover {
+      background-color: #42a5f5;
+      color: white;
+    }
+
+    /* Views */
+    .view-section {
+      display: none;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Loader */
+    #loader {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      display: none;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--primary-light);
+      border-top-color: var(--primary-green);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Mobile adjustments & Responsive Table */
+    @media (max-width: 768px) {
+      .container { padding-left: 10px; padding-right: 10px; }
+      .checklist-item { padding: 10px; }
+      .table-responsive { font-size: 0.9rem; }
+    }
+    
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto; /* เพิ่มให้สามารถเลื่อนซ้าย-ขวาได้ */
+        -webkit-overflow-scrolling: touch; /* เลื่อนบน iOS ได้สมูทขึ้น */
+    }
+
+    /* ป้องกันตัวหนังสือในตารางถูกบีบเป็นแนวตั้ง และเพิ่มระยะห่างให้อ่านง่าย */
+    .table-container table th,
+    .table-container table td {
+        white-space: nowrap; 
+        padding: 12px 15px;
+        vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loader -->
+  <div id="loader">
+    <div class="spinner"></div>
+    <h5 class="mt-3 text-success">กำลังประมวลผล...</h5>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="#" onclick="switchView('preCheck')">
+        <i class="fa-solid fa-staff-snake"></i> รพ.มุกดาหาร
+      </a>
+      <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <i class="fa-solid fa-bars fs-3"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-link" onclick="switchView('preCheck')"><i class="fa-solid fa-clipboard-check"></i> ก่อนใช้งาน</li>
+          <li class="nav-link" onclick="switchView('postCheck')"><i class="fa-solid fa-broom"></i> หลังใช้งาน</li>
+          <li class="nav-link" onclick="switchView('dashboard')"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+          <li class="nav-link" onclick="switchView('maintenance')"><i class="fa-solid fa-screwdriver-wrench"></i> ซ่อมบำรุง</li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    
+    <!-- ================= 1. PRE-USE CHECKLIST ================= -->
+    <div id="preCheck" class="view-section active">
+      <h3 class="mb-4"><i class="fa-solid fa-clipboard-check text-success"></i> ฟอร์มตรวจสภาพกล้อง (ก่อนใช้งาน)</h3>
+      <div class="card">
+        <div class="card-body">
+          <form id="preForm" onsubmit="submitPreForm(event)">
+            
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">รหัสกล้อง (Camera Code)</label>
+                <div class="input-group">
+                  <select class="form-select" id="preCamera">
+                    <option value="">-- เลือกกล้อง --</option>
+                  </select>
+                  <button class="btn btn-outline-success" type="button" onclick="promptAddCamera()"><i class="fa-solid fa-plus"></i></button>
+                  <button class="btn btn-outline-danger" type="button" onclick="promptDeleteCamera()" title="ลบรหัสกล้องที่เลือก"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">วันที่</label>
+                <input type="date" class="form-control" id="preDate">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">เวลา</label>
+                <input type="time" class="form-control" id="preTime">
+              </div>
+              
+              <div class="col-md-6">
+                <label class="form-label">ผู้บันทึก</label>
+                <div class="input-group">
+                  <select class="form-select" id="preUser">
+                    <option value="">-- เลือกผู้ใช้งาน --</option>
+                  </select>
+                  <button class="btn btn-outline-info" type="button" onclick="promptAddUser()"><i class="fa-solid fa-plus"></i></button>
+                  <button class="btn btn-outline-danger" type="button" onclick="promptDeleteUser()" title="ลบผู้ใช้งานที่เลือก"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">ตำแหน่ง</label>
+                <select class="form-select" id="prePosition">
+                  <option value="พยาบาลวิชาชีพ">พยาบาลวิชาชีพ</option>
+                  <option value="ผู้ช่วยพยาบาล">ผู้ช่วยพยาบาล</option>
+                </select>
+              </div>
+            </div>
+
+            <h5 class="text-success border-bottom pb-2 mb-3">รายการตรวจสอบ</h5>
+            <div class="row checklist-group">
+              <!-- JS จะ Generate Checkbox ที่นี่ -->
+              <div class="col-md-6" id="preChecklistCol1"></div>
+              <div class="col-md-6" id="preChecklistCol2"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">หมายเหตุ (ถ้ามี)</label>
+              <textarea class="form-control" id="preRemark" rows="2" placeholder="ระบุปัญหาที่พบ..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 fs-5"><i class="fa-solid fa-save"></i> บันทึกก่อนใช้งาน</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 2. POST-USE CHECKLIST ================= -->
+    <div id="postCheck" class="view-section">
+      <h3 class="mb-4"><i class="fa-solid fa-broom text-primary"></i> ฟอร์มตรวจสภาพกล้อง (หลังใช้งาน)</h3>
+      <div class="card">
+        <div class="card-body">
+          <form id="postForm" onsubmit="submitPostForm(event)">
+            
+            <div class="mb-4">
+              <label class="form-label fw-bold">เลือกรอบการใช้งาน (ที่บันทึกก่อนหน้า)</label>
+              <select class="form-select border-primary" id="postRecordId">
+                <option value="">-- กำลังโหลดข้อมูล --</option>
+              </select>
+              <small class="text-muted">ระบบจะแสดงเฉพาะรายการที่ยังไม่ได้บันทึกข้อมูลหลังใช้งาน</small>
+            </div>
+
+            <h5 class="text-primary border-bottom pb-2 mb-3">รายการตรวจสอบทำความสะอาด</h5>
+            <div class="row checklist-group">
+              <!-- JS จะ Generate Checkbox ที่นี่ -->
+              <div class="col-md-6" id="postChecklistCol1"></div>
+              <div class="col-md-6" id="postChecklistCol2"></div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">หมายเหตุ / ปัญหาที่พบ</label>
+              <textarea class="form-control" id="postRemark" rows="2"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-info w-100 py-2 fs-5 text-white"><i class="fa-solid fa-check-double"></i> บันทึกหลังใช้งาน</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 3. DASHBOARD ================= -->
+    <div id="dashboard" class="view-section">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h3><i class="fa-solid fa-chart-pie text-warning"></i> Dashboard สถิติ</h3>
+        <div>
+          <button class="btn btn-outline-success me-2" onclick="exportExcel()"><i class="fa-solid fa-file-excel"></i> Excel</button>
+          <button class="btn btn-primary" onclick="showAI()"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Summary</button>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <!-- Filter -->
+        <div class="col-md-4">
+          <select class="form-select" id="filterDay" onchange="renderDashboard()">
+            <option value="all">ทุกวัน</option>
+            <option value="01">01</option> <option value="02">02</option> <option value="03">03</option>
+            <option value="04">04</option> <option value="05">05</option> <option value="06">06</option>
+            <option value="07">07</option> <option value="08">08</option> <option value="09">09</option>
+            <option value="10">10</option> <option value="11">11</option> <option value="12">12</option>
+            <option value="13">13</option> <option value="14">14</option> <option value="15">15</option>
+            <option value="16">16</option> <option value="17">17</option> <option value="18">18</option>
+            <option value="19">19</option> <option value="20">20</option> <option value="21">21</option>
+            <option value="22">22</option> <option value="23">23</option> <option value="24">24</option>
+            <option value="25">25</option> <option value="26">26</option> <option value="27">27</option>
+            <option value="28">28</option> <option value="29">29</option> <option value="30">30</option>
+            <option value="31">31</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <select class="form-select" id="filterMonth" onchange="renderDashboard()">
+            <option value="all">ทุกเดือน</option>
+            <option value="01">มกราคม</option> <option value="02">กุมภาพันธ์</option>
+            <option value="03">มีนาคม</option> <option value="04">เมษายน</option>
+            <option value="05">พฤษภาคม</option> <option value="06">มิถุนายน</option>
+            <option value="07">กรกฎาคม</option> <option value="08">สิงหาคม</option>
+            <option value="09">กันยายน</option> <option value="10">ตุลาคม</option>
+            <option value="11">พฤศจิกายน</option> <option value="12">ธันวาคม</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <select class="form-select" id="filterYear" onchange="renderDashboard()">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Chart -->
+        <div class="col-lg-12 mb-4">
+          <div class="card h-100">
+            <div class="card-header">กราฟการใช้งานกล้องแต่ละรหัส</div>
+            <div class="card-body" style="position: relative; height:300px; width:100%">
+              <canvas id="usageChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>ประวัติการใช้งานล่าสุด</span>
+              <button class="btn btn-sm btn-light" onclick="loadDashboard()"><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+            <div class="card-body p-0 table-container">
+              <table class="table table-hover table-striped mb-0 text-center" id="dataTable">
+                <thead class="table-success sticky-top">
+                  <tr>
+                    <th>วันที่</th>
+                    <th>เวลา</th>
+                    <th>รหัสกล้อง</th>
+                    <th>ผู้ใช้งาน</th>
+                    <th>ก่อนใช้</th>
+                    <th>หลังใช้</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <tr><td colspan="6">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 4. MAINTENANCE ================= -->
+    <div id="maintenance" class="view-section">
+      <h3 class="mb-4"><i class="fa-solid fa-screwdriver-wrench text-danger"></i> ระบบแจ้งซ่อมบำรุง</h3>
+      
+      <div class="row">
+        <!-- Form -->
+        <div class="col-md-4 mb-4">
+          <div class="card">
+            <div class="card-header bg-danger text-white border-0">ฟอร์มแจ้งซ่อม</div>
+            <div class="card-body">
+              <form id="mntForm" onsubmit="submitMaintenance(event)">
+                <div class="mb-3">
+                  <label class="form-label">รหัสกล้อง</label>
+                  <select class="form-select" id="mntCamera"></select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">สถานะ</label>
+                  <select class="form-select" id="mntStatus">
+                    <option value="แจ้งซ่อม">แจ้งซ่อม</option>
+                    <option value="อยู่ระหว่างซ่อม">อยู่ระหว่างซ่อม</option>
+                    <option value="ซ่อมเสร็จแล้ว">ซ่อมเสร็จแล้ว</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">วันที่แจ้งซ่อม</label>
+                  <input type="date" class="form-control" id="mntRepairDate">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">วันที่รับกล้อง (ถ้ามี)</label>
+                  <input type="date" class="form-control" id="mntReceiveDate">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">ผู้แจ้ง</label>
+                  <select class="form-select" id="mntReporter"></select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">รายละเอียดอาการ</label>
+                  <textarea class="form-control" id="mntDetail" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger w-100"><i class="fa-solid fa-paper-plane"></i> ส่งข้อมูลแจ้งซ่อม</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="col-md-8">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <span>ประวัติการซ่อมบำรุง</span>
+              <div class="d-flex gap-2 align-items-center">
+                <input type="date" id="mntFilterStart" class="form-control form-control-sm" title="วันที่เริ่มต้น">
+                <span>ถึง</span>
+                <input type="date" id="mntFilterEnd" class="form-control form-control-sm" title="วันที่สิ้นสุด">
+                <button class="btn btn-sm btn-outline-primary" onclick="renderMaintenance()"><i class="fa-solid fa-search"></i> ค้นหา</button>
+                <button class="btn btn-sm btn-light" onclick="loadMaintenance()"><i class="fa-solid fa-rotate-right"></i></button>
+              </div>
+            </div>
+            <div class="card-body p-0 table-container">
+              <table class="table table-hover mb-0 text-center">
+                <thead class="table-danger sticky-top">
+                  <tr>
+                    <th>วันที่แจ้ง</th>
+                    <th>กล้อง</th>
+                    <th>อาการ</th>
+                    <th>สถานะ</th>
+                    <th>วันที่รับคืน</th>
+                  </tr>
+                </thead>
+                <tbody id="mntTableBody">
+                  <tr><td colspan="5">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- End Container -->
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Application Logic -->
+  <script>
+    // --- Mock Google Apps Script API for Local Testing / Preview ---
+    let mockCamerasList = ['EC720RL(K216)', 'Colono(Demo)', 'EG600WR'];
+    let mockUsersList = ['จินห์จุฑา รายณะสุข', 'จุฬาพร พูลศรี', 'บัวลอย ผาสุกมหาวิโล'];
+    let mockDb = [
+      {date: '2026-03-15', time: '09:00', camera: 'EC720RL(K216)', user: 'จุฬาพร พูลศรี', preStatus: 'ปกติ', postStatus: 'รอตรวจสอบ', recordId: 'REC-001'},
+      {date: '2026-03-14', time: '14:30', camera: 'EG600WR', user: 'จินห์จุฑา รายณะสุข', preStatus: 'ปกติ', postStatus: 'ปกติ', recordId: 'REC-000'}
+    ];
+    let mockPendingChecks = [{id: 'REC-001', label: 'EC720RL(K216) - 15/03/2026 [REC-001]'}];
+    let mockMaintenanceDb = [
+      {RepairDate: '2026-03-15 09:00:00', CameraCode: 'EG600WR', Detail: 'เลนส์มัว', Status: 'แจ้งซ่อม', ReceiveDate: ''}
+    ];
+
+    if (typeof google === 'undefined') {
+      window.google = {
+        script: {
+          run: {
+            withSuccessHandler: function(callback) { this.successCb = callback; return this; },
+            withFailureHandler: function(callback) { this.errorCb = callback; return this; },
+            getInitialData: function() { setTimeout(() => this.successCb && this.successCb({ cameras: mockCamerasList, users: mockUsersList, pending: mockPendingChecks }), 500); },
+            addCamera: function(c) { setTimeout(() => { mockCamerasList.push(c); this.successCb && this.successCb(mockCamerasList); }, 500); },
+            deleteCamera: function(c) { setTimeout(() => { mockCamerasList = mockCamerasList.filter(x => x !== c); this.successCb && this.successCb(mockCamerasList); }, 500); },
+            addUser: function(u) { setTimeout(() => { mockUsersList.push(u); mockUsersList.sort(); this.successCb && this.successCb(mockUsersList); }, 500); },
+            deleteUser: function(u) { setTimeout(() => { mockUsersList = mockUsersList.filter(x => x !== u); this.successCb && this.successCb(mockUsersList); }, 500); },
+            savePreChecklist: function(d) { 
+              setTimeout(() => {
+                let hasError = false;
+                // เช็คว่ามีรายการไหนถูกติ๊กเป็น 'ผิดปกติ' หรือไม่
+                preCheckItems.forEach(item => { if(d[item.id] === false) hasError = true; });
+                let rId = 'REC-' + Math.floor(Math.random() * 1000);
+                mockDb.unshift({date: d.date, time: d.time, camera: d.cameraCode, user: d.user, preStatus: hasError ? 'มีปัญหา' : 'ปกติ', postStatus: 'รอตรวจสอบ', recordId: rId});
+                mockPendingChecks.push({id: rId, label: `${d.cameraCode} - ${d.date} [${rId}]`});
+                this.successCb && this.successCb({message: 'บันทึกข้อมูลก่อนใช้งานสำเร็จ'}); 
+              }, 500); 
+            },
+            savePostChecklist: function(d) { 
+              setTimeout(() => {
+                let hasError = false;
+                postCheckItems.forEach(item => { if(d[item.id] === false) hasError = true; });
+                let record = mockDb.find(r => r.recordId === d.recordId);
+                if(record) record.postStatus = hasError ? 'มีปัญหา' : 'ปกติ';
+                mockPendingChecks = mockPendingChecks.filter(p => p.id !== d.recordId);
+                this.successCb && this.successCb({status:'success', message: 'บันทึกข้อมูลหลังใช้งานสำเร็จ'}); 
+              }, 500); 
+            },
+            saveMaintenance: function(d) { 
+              setTimeout(() => {
+                mockMaintenanceDb.unshift({
+                  RepairDate: d.repairDate + ' 10:00:00',
+                  CameraCode: d.cameraCode,
+                  Detail: d.detail,
+                  Status: d.status,
+                  ReceiveDate: d.receiveDate ? d.receiveDate + ' 10:00:00' : '-'
+                });
+                this.successCb && this.successCb({message: 'บันทึกข้อมูลแจ้งซ่อมสำเร็จ'});
+              }, 500); 
+            },
+            getDashboardData: function() { setTimeout(() => this.successCb && this.successCb(mockDb), 500); },
+            getMaintenanceData: function() { setTimeout(() => this.successCb && this.successCb(mockMaintenanceDb), 500); },
+            generateAISummary: function() { setTimeout(() => this.successCb && this.successCb({html: '<div class="text-start"><p><strong><i class="fa-solid fa-chart-line text-success"></i> ยอดการใช้งานรวม:</strong> 2 ครั้ง</p><p><strong><i class="fa-solid fa-star text-warning"></i> กล้องที่ใช้งานมากที่สุด:</strong> EC720RL(K216)</p><hr><p><strong><i class="fa-solid fa-lightbulb text-info"></i> ข้อเสนอแนะ AI:</strong><br>นี่คือข้อความวิเคราะห์จำลองสำหรับการพรีวิวเท่านั้น</p></div>'}), 500); }
+          }
+        }
+      };
+    }
+
+    // --- Checklist Items Configuration ---
+    const preCheckItems = [
+      { id: 'b1', label: '1.1 ความสะอาดและสภาพภายนอก (ไม่มีคราบ)' },
+      { id: 'b2', label: '1.2 สภาพสายและปลอกหุ้ม (ไม่มีรอยแตก ขาด)' },
+      { id: 'b3', label: '1.3 เลนส์ปลายกล้อง (ใส ไม่มีรอยขีดข่วน)' },
+      { id: 'b4', label: '1.4 ปลายโค้งงอ Angulation (ลื่นไหล ไม่ติดขัด)' },
+      { id: 'b5', label: '1.5 ช่องทางส่งน้ำ/ลม (ทดสอบได้ปกติ)' },
+      { id: 'b6', label: '1.6 ช่องทำหัตถการ Biopsy (ไม่มีสิ่งอุดตัน)' },
+      { id: 'b7', label: '1.7 สายไฟ/ระบบแสง (ส่องสว่างปกติ)' },
+      { id: 'b8', label: '1.8 การเชื่อมต่อกับ Processor (ภาพชัดเจน)' },
+      { id: 'b9', label: '1.9 อุปกรณ์เสริม (อยู่ครบสมบูรณ์)' },
+      { id: 'b10', label: '1.10 การทดสอบ Leak Test (ผ่าน)' }
+    ];
+
+    const postCheckItems = [
+      { id: 'a1', label: '2.1 ตรวจสภาพภายนอกอีกครั้ง' },
+      { id: 'a2', label: '2.2 Flush และล้างช่องทางต่างๆ' },
+      { id: 'a3', label: '2.3 ทำความสะอาดเลนส์' },
+      { id: 'a4', label: '2.4 ทำความสะอาดส่วนปลายโค้งงอ' },
+      { id: 'a5', label: '2.5 ตรวจสอบ Angulation อีกครั้ง' },
+      { id: 'a6', label: '2.6 Leak Test หลังใช้งาน (ผ่าน)' },
+      { id: 'a7', label: '2.7 การเก็บรักษาถูกวิธี' },
+      { id: 'a8', label: '2.8 บันทึกการใช้งานเรียบร้อย' },
+      { id: 'a9', label: '2.9 ไม่มีปัญหาระหว่างใช้งาน (หากมีให้แจ้งซ่อม)' }
+    ];
+
+    // Global Data
+    let dashboardDataRaw = [];
+    let maintenanceDataRaw = [];
+    let chartInstance = null;
+
+    // --- Initialization ---
+    document.addEventListener("DOMContentLoaded", () => {
+      // Set Default Dates
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('preDate').value = today;
+      document.getElementById('mntRepairDate').value = today;
+      
+      const now = new Date();
+      const timeString = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+      document.getElementById('preTime').value = timeString;
+
+      // Generate Checkboxes
+      generateCheckboxes(preCheckItems, 'preChecklistCol1', 'preChecklistCol2');
+      generateCheckboxes(postCheckItems, 'postChecklistCol1', 'postChecklistCol2');
+
+      // Load Initial Data
+      loadInitialData();
+    });
+
+    function generateCheckboxes(items, col1Id, col2Id) {
+      const col1 = document.getElementById(col1Id);
+      const col2 = document.getElementById(col2Id);
+      const half = Math.ceil(items.length / 2);
+
+      // เคลียร์ค่าก่อนหน้า
+      col1.innerHTML = '';
+      col2.innerHTML = '';
+
+      items.forEach((item, index) => {
+        const html = `
+          <div class="checklist-item flex-column align-items-start">
+            <label class="fw-bold mb-2 w-100" style="cursor:default;">${item.label}</label>
+            <div class="d-flex gap-4 w-100">
+              <div class="form-check">
+                <input class="form-check-input radio-pass" type="radio" name="grp_${item.id}" id="${item.id}" checked>
+                <label class="form-check-label text-success" for="${item.id}">
+                  <i class="fa-solid fa-check"></i> ปกติ
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input radio-fail" type="radio" name="grp_${item.id}" id="${item.id}_fail">
+                <label class="form-check-label text-danger" for="${item.id}_fail">
+                  <i class="fa-solid fa-xmark"></i> ผิดปกติ
+                </label>
+              </div>
+            </div>
+          </div>
+        `;
+        if (index < half) col1.innerHTML += html;
+        else col2.innerHTML += html;
+      });
+    }
+
+    // --- Navigation ---
+    function switchView(viewId) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      
+      // Close mobile navbar if open
+      const navbarCollapse = document.getElementById('navbarNav');
+      if(navbarCollapse.classList.contains('show')){
+        let bsCollapse = new bootstrap.Collapse(navbarCollapse);
+        bsCollapse.hide();
+      }
+
+      // Load specific data based on view
+      if(viewId === 'dashboard') loadDashboard();
+      if(viewId === 'maintenance') loadMaintenance();
+      if(viewId === 'postCheck') loadInitialData(); // Refresh pending list
+    }
+
+    // --- Loading Overlay ---
+    const showLoader = () => document.getElementById('loader').style.display = 'flex';
+    const hideLoader = () => document.getElementById('loader').style.display = 'none';
+
+    // --- Data Fetching ---
+    function loadInitialData() {
+      showLoader();
+      google.script.run.withSuccessHandler(res => {
+        // Populate Cameras
+        const camHtml = '<option value="">-- เลือกกล้อง --</option>' + res.cameras.map(c => `<option value="${c}">${c}</option>`).join('');
+        document.getElementById('preCamera').innerHTML = camHtml;
+        document.getElementById('mntCamera').innerHTML = camHtml;
+
+        // Populate Users
+        const userHtml = '<option value="">-- เลือกผู้ใช้งาน --</option>' + res.users.map(u => `<option value="${u}">${u}</option>`).join('');
+        document.getElementById('preUser').innerHTML = userHtml;
+        document.getElementById('mntReporter').innerHTML = userHtml;
+
+        // Populate Pending Post Checks
+        const pendingHtml = '<option value="">-- เลือกรอบการใช้งานที่ค้างอยู่ --</option>' + 
+          res.pending.map(p => `<option value="${p.id}">${p.label}</option>`).join('');
+        document.getElementById('postRecordId').innerHTML = pendingHtml;
+        
+        hideLoader();
+      }).withFailureHandler(err => {
+        hideLoader();
+        Swal.fire('Error', 'ไม่สามารถโหลดข้อมูลได้', 'error');
+      }).getInitialData();
+    }
+
+    // --- Add Helpers ---
+    function promptAddCamera() {
+      Swal.fire({
+        title: 'เพิ่มรหัสกล้องใหม่',
+        input: 'text',
+        inputPlaceholder: 'เช่น EC720RL(New)',
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed && result.value) {
+          showLoader();
+          google.script.run.withSuccessHandler(cameras => {
+            const camHtml = '<option value="">-- เลือกกล้อง --</option>' + cameras.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('preCamera').innerHTML = camHtml;
+            document.getElementById('mntCamera').innerHTML = camHtml;
+            hideLoader();
+            Swal.fire('สำเร็จ', 'เพิ่มรหัสกล้องเรียบร้อย', 'success');
+          }).addCamera(result.value);
+        }
+      });
+    }
+
+    function promptAddUser() {
+      Swal.fire({
+        title: 'เพิ่มชื่อผู้ใช้งานใหม่',
+        input: 'text',
+        inputPlaceholder: 'ชื่อ-นามสกุล',
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed && result.value) {
+          showLoader();
+          google.script.run.withSuccessHandler(users => {
+            const userHtml = '<option value="">-- เลือกผู้ใช้งาน --</option>' + users.map(u => `<option value="${u}">${u}</option>`).join('');
+            document.getElementById('preUser').innerHTML = userHtml;
+            document.getElementById('mntReporter').innerHTML = userHtml;
+            hideLoader();
+            Swal.fire('สำเร็จ', 'เพิ่มผู้ใช้งานเรียบร้อย', 'success');
+          }).addUser(result.value);
+        }
+      });
+    }
+
+    function promptDeleteCamera() {
+      const selectedCam = document.getElementById('preCamera').value;
+      if (!selectedCam) {
+        Swal.fire('แจ้งเตือน', 'กรุณาเลือกรหัสกล้องที่ต้องการลบจากช่องตัวเลือกก่อน', 'warning');
+        return;
+      }
+      Swal.fire({
+        title: 'ยืนยันการลบ',
+        text: `คุณต้องการลบรหัสกล้อง "${selectedCam}" ใช่หรือไม่?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoader();
+          google.script.run.withSuccessHandler(cameras => {
+            const camHtml = '<option value="">-- เลือกกล้อง --</option>' + cameras.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('preCamera').innerHTML = camHtml;
+            document.getElementById('mntCamera').innerHTML = camHtml;
+            hideLoader();
+            Swal.fire('ลบสำเร็จ', 'ลบรหัสกล้องเรียบร้อยแล้ว', 'success');
+          }).deleteCamera(selectedCam);
+        }
+      });
+    }
+
+    function promptDeleteUser() {
+      const selectedUser = document.getElementById('preUser').value;
+      if (!selectedUser) {
+        Swal.fire('แจ้งเตือน', 'กรุณาเลือกชื่อผู้ใช้งานที่ต้องการลบจากช่องตัวเลือกก่อน', 'warning');
+        return;
+      }
+      Swal.fire({
+        title: 'ยืนยันการลบ',
+        text: `คุณต้องการลบชื่อผู้ใช้งาน "${selectedUser}" ใช่หรือไม่?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ใช่, ลบเลย!',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoader();
+          google.script.run.withSuccessHandler(users => {
+            const userHtml = '<option value="">-- เลือกผู้ใช้งาน --</option>' + users.map(u => `<option value="${u}">${u}</option>`).join('');
+            document.getElementById('preUser').innerHTML = userHtml;
+            document.getElementById('mntReporter').innerHTML = userHtml;
+            hideLoader();
+            Swal.fire('ลบสำเร็จ', 'ลบชื่อผู้ใช้งานเรียบร้อยแล้ว', 'success');
+          }).deleteUser(selectedUser);
+        }
+      });
+    }
+
+    // --- Submissions ---
+    function submitPreForm(e) {
+      e.preventDefault();
+      
+      const cameraCode = document.getElementById('preCamera').value;
+      const date = document.getElementById('preDate').value;
+      const time = document.getElementById('preTime').value;
+      const user = document.getElementById('preUser').value;
+      const position = document.getElementById('prePosition').value;
+      const remark = document.getElementById('preRemark').value;
+
+      // เพิ่มระบบตรวจสอบการกรอกข้อมูล (แทน HTML Required)
+      if (!cameraCode || !date || !time || !user || !position) {
+        Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลหลักให้ครบถ้วนก่อนบันทึก (รหัสกล้อง, วัน-เวลา, ผู้บันทึก)', 'warning');
+        return;
+      }
+
+      const data = {
+        cameraCode: cameraCode,
+        date: date,
+        time: time,
+        user: user,
+        position: position,
+        remark: remark,
+      };
+      
+      preCheckItems.forEach(item => {
+        data[item.id] = document.getElementById(item.id).checked;
+      });
+
+      showLoader();
+      google.script.run.withSuccessHandler(res => {
+        hideLoader();
+        // แสดง Alert ค้างไว้ 1.5 วินาที แล้วรันฟังก์ชันถัดไป
+        Swal.fire({
+          title: 'บันทึกสำเร็จ',
+          text: 'กำลังพาท่านไปยังหน้า Dashboard...',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
+          document.getElementById('preForm').reset();
+          // Reset defaults
+          document.getElementById('preDate').value = new Date().toISOString().split('T')[0];
+          preCheckItems.forEach(item => document.getElementById(item.id).checked = true);
+          
+          // เด้งไปที่หน้า Dashboard
+          switchView('dashboard');
+        });
+      }).withFailureHandler(err => {
+        hideLoader(); Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
+      }).savePreChecklist(data);
+    }
+
+    function submitPostForm(e) {
+      e.preventDefault();
+      const recordId = document.getElementById('postRecordId').value;
+      if(!recordId) {
+        Swal.fire('แจ้งเตือน', 'กรุณาเลือกรอบการใช้งานก่อน', 'warning');
+        return;
+      }
+
+      const data = {
+        recordId: recordId,
+        remark: document.getElementById('postRemark').value,
+      };
+      
+      postCheckItems.forEach(item => {
+        data[item.id] = document.getElementById(item.id).checked;
+      });
+
+      showLoader();
+      google.script.run.withSuccessHandler(res => {
+        hideLoader();
+        if(res.status === 'success'){
+          Swal.fire({
+            title: 'บันทึกสำเร็จ',
+            text: 'กำลังพาท่านไปยังหน้า Dashboard...',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+          }).then(() => {
+            document.getElementById('postForm').reset();
+            postCheckItems.forEach(item => document.getElementById(item.id).checked = true);
+            
+            // เด้งไปที่หน้า Dashboard
+            switchView('dashboard');
+          });
+        } else {
+          Swal.fire('Error', res.message, 'error');
+        }
+      }).withFailureHandler(err => {
+        hideLoader(); Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
+      }).savePostChecklist(data);
+    }
+
+    function submitMaintenance(e) {
+      e.preventDefault();
+      
+      const cameraCode = document.getElementById('mntCamera').value;
+      const status = document.getElementById('mntStatus').value;
+      const repairDate = document.getElementById('mntRepairDate').value;
+      const receiveDate = document.getElementById('mntReceiveDate').value;
+      const reporter = document.getElementById('mntReporter').value;
+      const detail = document.getElementById('mntDetail').value;
+
+      // เพิ่มระบบตรวจสอบการกรอกข้อมูลก่อนเด้งแจ้งยืนยัน
+      if (!cameraCode || !status || !repairDate || !reporter || !detail) {
+        Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูล รหัสกล้อง, วันที่แจ้ง, ผู้แจ้ง และรายละเอียดให้ครบถ้วน', 'warning');
+        return;
+      }
+
+      const data = {
+        cameraCode: cameraCode,
+        status: status,
+        repairDate: repairDate,
+        receiveDate: receiveDate,
+        reporter: reporter,
+        detail: detail
+      };
+
+      Swal.fire({
+        title: 'ยืนยันการแจ้งซ่อม',
+        text: `คุณต้องการส่งข้อมูลแจ้งซ่อมกล้องรหัส "${data.cameraCode}" ใช่หรือไม่?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          showLoader();
+          google.script.run.withSuccessHandler(res => {
+            hideLoader();
+            Swal.fire('สำเร็จ', res.message, 'success');
+            document.getElementById('mntForm').reset();
+            document.getElementById('mntRepairDate').value = new Date().toISOString().split('T')[0];
+            loadMaintenance(); // Refresh table
+          }).withFailureHandler(err => {
+            hideLoader(); Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
+          }).saveMaintenance(data);
+        }
+      });
+    }
+
+    // --- Dashboard & Chart ---
+    function loadDashboard() {
+      showLoader();
+      google.script.run.withSuccessHandler(data => {
+        dashboardDataRaw = data;
+        renderDashboard();
+        hideLoader();
+      }).getDashboardData();
+    }
+
+    function renderDashboard() {
+      const dFilter = document.getElementById('filterDay').value;
+      const mFilter = document.getElementById('filterMonth').value;
+      const yFilter = document.getElementById('filterYear').value;
+
+      // Filter Data
+      let filteredData = dashboardDataRaw.filter(row => {
+        if(!row.date) return false;
+        const d = row.date.split('-'); // YYYY-MM-DD
+        if(d.length < 3) return false;
+        const passYear = (yFilter === 'all' || d[0] === yFilter);
+        const passMonth = (mFilter === 'all' || d[1] === mFilter);
+        const passDay = (dFilter === 'all' || d[2] === dFilter);
+        return passYear && passMonth && passDay;
+      });
+
+      // Render Table
+      const tbody = document.getElementById('tableBody');
+      if(filteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6">ไม่มีข้อมูลในเดือนนี้</td></tr>';
+      } else {
+        tbody.innerHTML = filteredData.map(r => `
+          <tr>
+            <td>${r.date}</td>
+            <td>${r.time}</td>
+            <td>${r.camera}</td>
+            <td>${r.user}</td>
+            <td><span class="badge bg-${r.preStatus==='ปกติ'?'success':'danger'}">${r.preStatus}</span></td>
+            <td><span class="badge bg-${r.postStatus==='ปกติ'?'success':(r.postStatus==='รอตรวจสอบ'?'warning text-dark':'danger')}">${r.postStatus}</span></td>
+          </tr>
+        `).join('');
+      }
+
+      // Render Chart
+      let cameraCounts = {};
+      filteredData.forEach(r => {
+        cameraCounts[r.camera] = (cameraCounts[r.camera] || 0) + 1;
+      });
+
+      const labels = Object.keys(cameraCounts);
+      const values = Object.values(cameraCounts);
+
+      const ctx = document.getElementById('usageChart').getContext('2d');
+      if(chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'จำนวนครั้งที่ใช้งาน',
+            data: values,
+            backgroundColor: 'rgba(129, 199, 132, 0.6)',
+            borderColor: '#519657',
+            borderWidth: 1,
+            borderRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    // --- Maintenance Table ---
+    function loadMaintenance() {
+      showLoader();
+      google.script.run.withSuccessHandler(data => {
+        maintenanceDataRaw = data;
+        renderMaintenance();
+        hideLoader();
+      }).getMaintenanceData();
+    }
+
+    function renderMaintenance() {
+      const startStr = document.getElementById('mntFilterStart').value;
+      const endStr = document.getElementById('mntFilterEnd').value;
+      const tbody = document.getElementById('mntTableBody');
+
+      let filteredData = maintenanceDataRaw;
+
+      // กรองข้อมูลตามช่วงเวลาที่เลือก
+      if (startStr && endStr) {
+        const startDate = new Date(startStr);
+        const endDate = new Date(endStr);
+        endDate.setHours(23, 59, 59, 999); // ครอบคลุมถึงเวลา 23:59 น. ของวันสิ้นสุด
+
+        filteredData = maintenanceDataRaw.filter(r => {
+          if (!r.RepairDate) return false;
+          // แปลงวันที่ที่ได้จาก GAS ('YYYY-MM-DD HH:mm:ss') เพื่อเปรียบเทียบ
+          const repDateStr = r.RepairDate.split(' ')[0]; 
+          const rowDate = new Date(repDateStr);
+          return rowDate >= startDate && rowDate <= endDate;
+        });
+      }
+
+      if(filteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">ไม่มีประวัติการแจ้งซ่อมในช่วงเวลานี้</td></tr>';
+      } else {
+        tbody.innerHTML = filteredData.map(r => {
+          let statusBadge = r.Status === 'แจ้งซ่อม' ? 'danger' : (r.Status === 'อยู่ระหว่างซ่อม' ? 'warning text-dark' : 'success');
+          return `
+          <tr>
+            <td>${r.RepairDate.split(' ')[0]}</td>
+            <td class="fw-bold text-primary">${r.CameraCode}</td>
+            <td class="text-start"><small>${r.Detail}</small></td>
+            <td><span class="badge bg-${statusBadge}">${r.Status}</span></td>
+            <td>${r.ReceiveDate ? r.ReceiveDate.split(' ')[0] : '-'}</td>
+          </tr>
+        `}).join('');
+      }
+    }
+
+    // --- AI Summary ---
+    function showAI() {
+      Swal.fire({
+        title: 'กำลังวิเคราะห์ข้อมูล...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+      
+      google.script.run.withSuccessHandler(res => {
+        Swal.fire({
+          title: '🤖 AI Summary Report',
+          html: res.html,
+          icon: 'info',
+          confirmButtonText: 'รับทราบ',
+          confirmButtonColor: '#81c784'
+        });
+      }).generateAISummary();
+    }
+
+    // --- Export Excel ---
+    function exportExcel() {
+      if(dashboardDataRaw.length === 0) {
+        Swal.fire('แจ้งเตือน','ไม่มีข้อมูลให้ Export','warning');
+        return;
+      }
+      // Prepare data
+      const ws_data = [["วันที่", "เวลา", "รหัสกล้อง", "ผู้ใช้งาน", "สถานะก่อนใช้งาน", "สถานะหลังใช้งาน", "รหัส Record"]];
+      dashboardDataRaw.forEach(r => {
+        ws_data.push([r.date, r.time, r.camera, r.user, r.preStatus, r.postStatus, r.recordId]);
+      });
+      
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "UsageData");
+      XLSX.writeFile(wb, "Endoscope_Report.xlsx");
+    }
+
+  </script>
+</body>
+</html>
